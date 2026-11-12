@@ -87,7 +87,7 @@ async function createProduct(formData: FormData) {
       available: true,
       position: (last._max.position ?? 0) + 1,
       categoryId,
-      imageUrl,
+      imagem:imageUrl,
     },
   });
 
