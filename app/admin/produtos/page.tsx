@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { mkdir, writeFile } from "fs/promises";
+import { mkdir, unlink, writeFile } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
 import { prisma } from "../../lib/prisma";
@@ -148,6 +148,39 @@ async function toggleProduct(formData: FormData) {
   revalidatePath("/admin/produtos");
 }
 
+// Exclui o produto de vez (pedidos antigos mantêm o nome, pois productId vira null)
+async function deleteProduct(formData: FormData) {
+  "use server";
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) failWith("Produto inválido.");
+
+  let image: string | null = null;
+
+  try {
+    const deleted = await prisma.product.delete({ where: { id } });
+    image = deleted.image;
+  } catch (error) {
+    console.error("Erro ao excluir produto:", error);
+    failWith("Não foi possível excluir o produto.");
+  }
+
+  // Remove o arquivo da foto, se estiver em public/uploads
+  if (image?.startsWith("/uploads/")) {
+    try {
+      await unlink(
+        path.join(process.cwd(), "public", "uploads", path.basename(image))
+      );
+    } catch {
+      // arquivo já não existe: ignora
+    }
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin/produtos");
+  redirect("/admin/produtos?ok=3");
+}
+
 // 2990 -> "29,90"
 function priceToInput(cents: number) {
   return (cents / 100).toFixed(2).replace(".", ",");
@@ -166,9 +199,14 @@ const inputClass =
 export default async function NewProductPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ok?: string; erro?: string; editar?: string }>;
+  searchParams: Promise<{
+    ok?: string;
+    erro?: string;
+    editar?: string;
+    excluir?: string;
+  }>;
 }) {
-  const { ok, erro, editar } = await searchParams;
+  const { ok, erro, editar, excluir } = await searchParams;
 
   const categories = await prisma.category.findMany({
     where: { active: true },
@@ -182,10 +220,22 @@ export default async function NewProductPage({
 
   // Produto aberto na tela de edição (via ?editar=ID)
   const editing = editar ? products.find((p) => p.id === editar) : null;
+  const confirmingDelete = excluir === "1";
+
+  // Agrupa por categoria, na ordem em que aparecem no cardápio
+  const groups: { id: string; name: string; items: typeof products }[] = [];
+  for (const p of products) {
+    let group = groups.find((g) => g.id === p.categoryId);
+    if (!group) {
+      group = { id: p.categoryId, name: p.category.name, items: [] };
+      groups.push(group);
+    }
+    group.items.push(p);
+  }
 
   return (
     <main className="min-h-screen bg-[#111] p-5 text-white">
-      <div className="mx-auto max-w-xl">
+      <div className="mx-auto max-w-5xl">
         <header className="mb-6 flex items-center justify-between gap-3">
           <h1 className="text-2xl font-black">
             Cadastrar <span className="text-[#D4AF37]">produto</span>
@@ -203,7 +253,9 @@ export default async function NewProductPage({
             role="status"
             className="mb-4 rounded-xl bg-emerald-500/15 p-3 text-sm font-bold text-emerald-400"
           >
-            {ok === "2"
+            {ok === "3"
+              ? "Produto excluído."
+              : ok === "2"
               ? "Produto atualizado."
               : "Produto cadastrado! Ele já aparece no cardápio."}
           </p>
@@ -220,9 +272,9 @@ export default async function NewProductPage({
 
         <form
           action={createProduct}
-          className="space-y-4 rounded-2xl border border-white/10 bg-[#1c1c1c] p-5"
+          className="grid gap-4 rounded-2xl border border-white/10 bg-[#1c1c1c] p-5 sm:grid-cols-2"
         >
-          <div>
+          <div className="sm:col-span-2">
             <label htmlFor="name" className="mb-1 block text-sm font-bold">
               Nome
             </label>
@@ -231,7 +283,6 @@ export default async function NewProductPage({
               name="name"
               required
               maxLength={80}
-              placeholder="Ex.: Sorvete de creme"
               className={inputClass}
             />
           </div>
@@ -246,7 +297,6 @@ export default async function NewProductPage({
                 name="price"
                 required
                 inputMode="decimal"
-                placeholder="29,90"
                 className={inputClass}
               />
             </div>
@@ -290,7 +340,7 @@ export default async function NewProductPage({
             </select>
           </div>
 
-          <div>
+          <div className="sm:col-span-2">
             <label htmlFor="description" className="mb-1 block text-sm font-bold">
               Descrição
             </label>
@@ -299,12 +349,11 @@ export default async function NewProductPage({
               name="description"
               rows={3}
               maxLength={300}
-              placeholder="Ingredientes, tamanho, observações..."
               className={inputClass}
             />
           </div>
 
-          <div>
+          <div className="sm:col-span-2">
             <label htmlFor="photo" className="mb-1 block text-sm font-bold">
               Foto <span className="font-normal text-gray-400">(opcional)</span>
             </label>
@@ -322,7 +371,7 @@ export default async function NewProductPage({
 
           <button
             type="submit"
-            className="w-full rounded-xl bg-[#D4AF37] py-3 text-sm font-black text-black hover:bg-[#E6C65C]"
+            className="rounded-xl bg-[#D4AF37] py-3 text-sm font-black text-black hover:bg-[#E6C65C] sm:col-span-2"
           >
             Salvar produto
           </button>
@@ -338,9 +387,19 @@ export default async function NewProductPage({
           </p>
         )}
 
-        {/* Lista compacta: cada card tem um botão Editar */}
-        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {products.map((product) => (
+        {/* Lista agrupada: o nome da categoria fica acima dos produtos */}
+        <div className="space-y-6">
+          {groups.map((group) => (
+            <section key={group.id} aria-labelledby={`cat-${group.id}`}>
+              <h3
+                id={`cat-${group.id}`}
+                className="mb-2 text-xs font-black uppercase tracking-widest text-[#D4AF37]"
+              >
+                {group.name}
+              </h3>
+
+              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {group.items.map((product) => (
             <li
               key={product.id}
               className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#1c1c1c] p-3"
@@ -361,7 +420,7 @@ export default async function NewProductPage({
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-black">{product.name}</p>
                 <p className="truncate text-xs text-gray-400">
-                  {formatPrice(product.price)} · {product.category.name}
+                  {formatPrice(product.price)}
                 </p>
                 {!product.available && (
                   <p className="text-xs font-bold text-amber-400">
@@ -385,7 +444,10 @@ export default async function NewProductPage({
               </Link>
             </li>
           ))}
-        </ul>
+              </ul>
+            </section>
+          ))}
+        </div>
 
         {/* Tela de edição (abre com ?editar=ID) */}
         {editing && (
@@ -419,13 +481,15 @@ export default async function NewProductPage({
                 )}
 
                 <div className="min-w-0 flex-1">
+                  <p className="text-xs font-black uppercase tracking-widest text-[#D4AF37]">
+                    {editing.category.name}
+                  </p>
                   <h2 id="edit-title" className="truncate text-2xl font-black">
                     {editing.name}
                   </h2>
-                  <p className="text-sm text-gray-400">
-                    {editing.category.name}
-                    {!editing.available && " · Fora do cardápio"}
-                  </p>
+                  {!editing.available && (
+                    <p className="text-sm text-amber-400">Fora do cardápio</p>
+                  )}
                 </div>
 
                 <Link
@@ -502,7 +566,8 @@ export default async function NewProductPage({
                 </button>
               </form>
 
-              <form action={toggleProduct} className="mt-3">
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <form action={toggleProduct}>
                 <input type="hidden" name="id" value={editing.id} />
                 <input
                   type="hidden"
@@ -522,6 +587,48 @@ export default async function NewProductPage({
                     : "Colocar no cardápio"}
                 </button>
               </form>
+
+              {confirmingDelete ? (
+                <div
+                  role="alertdialog"
+                  aria-label="Confirmar exclusão"
+                  className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 sm:col-span-2"
+                >
+                  <p className="text-sm font-bold text-red-300">
+                    Excluir <strong>{editing.name}</strong> para sempre? Esta
+                    ação não pode ser desfeita.
+                  </p>
+
+                  <div className="mt-3 grid grid-cols-2 gap-3">
+                    <form action={deleteProduct}>
+                      <input type="hidden" name="id" value={editing.id} />
+                      <button
+                        type="submit"
+                        className="w-full rounded-xl bg-red-600 py-3 text-sm font-black text-white hover:bg-red-500"
+                      >
+                        Sim, excluir
+                      </button>
+                    </form>
+
+                    <Link
+                      href={`/admin/produtos?editar=${editing.id}`}
+                      scroll={false}
+                      className="rounded-xl bg-[#333] py-3 text-center text-sm font-bold hover:bg-[#444]"
+                    >
+                      Cancelar
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <Link
+                  href={`/admin/produtos?editar=${editing.id}&excluir=1`}
+                  scroll={false}
+                  className="rounded-xl border border-red-500/40 py-3 text-center text-sm font-bold text-red-400 hover:bg-red-500/10"
+                >
+                  Excluir permanentemente
+                </Link>
+              )}
+              </div>
             </div>
           </div>
         )}
