@@ -153,12 +153,20 @@ export default async function AdminPage({
             <span className="text-base font-bold text-gray-400">Painel</span>
           </h1>
 
-          <Link
-            href={filter ? `/admin?status=${filter}` : "/admin"}
-            className="rounded-xl bg-[#222] px-4 py-2 text-sm font-bold hover:bg-[#333]"
-          >
-            Atualizar
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href="/admin/produtos"
+              className="rounded-xl bg-[#D4AF37] px-4 py-2 text-sm font-black text-black hover:bg-[#E6C65C]"
+            >
+              Cadastrar produto
+            </Link>
+            <Link
+              href={filter ? `/admin?status=${filter}` : "/admin"}
+              className="rounded-xl bg-[#222] px-4 py-2 text-sm font-bold hover:bg-[#333]"
+            >
+              Atualizar
+            </Link>
+          </div>
         </header>
 
         <nav className="mb-6 flex gap-3 overflow-x-auto">
