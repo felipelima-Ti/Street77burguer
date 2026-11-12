@@ -38,6 +38,17 @@ async function saveImage(file: File): Promise<string> {
   return `/uploads/${filename}`;
 }
 
+// Apaga um arquivo de public/uploads (ignora se não existir ou se for externo)
+async function removeImage(url: string | null) {
+  if (!url?.startsWith("/uploads/")) return;
+
+  try {
+    await unlink(path.join(process.cwd(), "public", "uploads", path.basename(url)));
+  } catch {
+    // arquivo já não existe: ignora
+  }
+}
+
 async function createProduct(formData: FormData) {
   "use server";
 
@@ -107,23 +118,54 @@ async function updateProduct(formData: FormData) {
   const price = parsePrice(String(formData.get("price") ?? ""));
   const stock = Number(formData.get("stock"));
 
+  const photo = formData.get("photo");
+
   if (!id) failWith("Produto inválido.");
   if (price === null) failWith("Informe um valor válido, ex.: 29,90.");
   if (!Number.isInteger(stock) || stock < 0) failWith("Estoque inválido.");
 
+  // Nova foto (opcional): valida tipo e tamanho antes de salvar
+  let newImage: string | null = null;
+
+  if (photo instanceof File && photo.size > 0) {
+    if (!IMAGE_TYPES[photo.type]) failWith("A foto deve ser JPG, PNG ou WebP.");
+    if (photo.size > MAX_SIZE) failWith("A foto deve ter no máximo 2 MB.");
+
+    try {
+      newImage = await saveImage(photo);
+    } catch (error) {
+      console.error("Erro ao salvar imagem:", error);
+      failWith("Não foi possível salvar a foto.");
+    }
+  }
+
+  let oldImage: string | null = null;
+
   try {
+    const current = await prisma.product.findUnique({
+      where: { id },
+      select: { image: true },
+    });
+    oldImage = current?.image ?? null;
+
     await prisma.product.update({
       where: { id },
       data: {
         price: price!,
         stock,
         description: description || null,
+        // Só troca a foto se uma nova foi enviada
+        ...(newImage ? { image: newImage } : {}),
       },
     });
   } catch (error) {
     console.error("Erro ao atualizar produto:", error);
+    await removeImage(newImage); // descarta a foto nova se o banco falhou
     failWith("Não foi possível atualizar o produto.");
   }
+
+  // Atualizou com sucesso: apaga a foto antiga
+  if (newImage) await removeImage(oldImage);
 
   revalidatePath("/");
   revalidatePath("/admin/produtos");
@@ -556,6 +598,26 @@ export default async function NewProductPage({
                     defaultValue={editing.description ?? ""}
                     className={inputClass}
                   />
+                </div>
+
+                <div className="col-span-2">
+                  <label
+                    htmlFor="edit-photo"
+                    className="mb-1 block text-sm font-bold"
+                  >
+                    Trocar foto{" "}
+                    <span className="font-normal text-gray-400">(opcional)</span>
+                  </label>
+                  <input
+                    id="edit-photo"
+                    name="photo"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="w-full text-sm text-gray-300 file:mr-3 file:rounded-xl file:border-0 file:bg-[#D4AF37] file:px-4 file:py-2 file:text-sm file:font-black file:text-black hover:file:bg-[#E6C65C]"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    JPG, PNG ou WebP, até 2 MB. Sem arquivo, a foto atual é mantida.
+                  </p>
                 </div>
 
                 <button
