@@ -132,6 +132,9 @@ model Order {
   @@index([createdAt])
   @@index([tableId])
   @@index([serviceType])
+
+  // ...campos existentes
+  pickupCode String? // só preenchido em RETIRADA e ENTREGA
 }
 
 // Itens dos pedidos

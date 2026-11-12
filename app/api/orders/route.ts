@@ -1,6 +1,11 @@
-
 import { NextResponse } from "next/server";
 import { prisma } from "../../lib/prisma";
+import { generatePickupCode } from "../../lib/pickup-code";
+
+// Retorna o texto limpo ou null se vazio/inválido
+function clean(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
 
 export async function POST(request: Request) {
   try {
@@ -11,6 +16,12 @@ export async function POST(request: Request) {
       serviceType,
       tableId,
       customerName,
+      customerPhone,
+      deliveryAddress,
+      deliveryNumber,
+      deliveryNeighborhood,
+      deliveryComplement,
+      deliveryReference,
       notes,
       method,
       mode,
@@ -24,7 +35,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!["COUNTER", "TABLE"].includes(serviceType)) {
+    if (!["COUNTER", "TABLE", "DELIVERY"].includes(serviceType)) {
       return NextResponse.json(
         { error: "Tipo de atendimento inválido." },
         { status: 400 }
@@ -52,6 +63,41 @@ export async function POST(request: Request) {
       );
     }
 
+    // Retirada e entrega: nome obrigatório e geram código
+    const needsCode = serviceType !== "TABLE";
+    const name = clean(customerName);
+
+    if (needsCode && (!name || name.length < 2)) {
+      return NextResponse.json(
+        { error: "Informe seu nome." },
+        { status: 400 }
+      );
+    }
+
+    // Entrega: telefone e endereço obrigatórios
+    const isDelivery = serviceType === "DELIVERY";
+    const phone = clean(customerPhone);
+    const address = clean(deliveryAddress);
+    const number = clean(deliveryNumber);
+    const neighborhood = clean(deliveryNeighborhood);
+
+    if (isDelivery && (!phone || !address || !number || !neighborhood)) {
+      return NextResponse.json(
+        { error: "Preencha telefone e endereço de entrega." },
+        { status: 400 }
+      );
+    }
+
+    // Limite das observações
+    if (notes !== undefined && notes !== null) {
+      if (typeof notes !== "string" || notes.length > 300) {
+        return NextResponse.json(
+          { error: "As observações devem ter no máximo 300 caracteres." },
+          { status: 400 }
+        );
+      }
+    }
+
     // Agrupa produtos repetidos e valida quantidades
     const quantities = new Map<string, number>();
 
@@ -73,14 +119,14 @@ export async function POST(request: Request) {
       );
     }
 
+    // Taxa definida no servidor (o cliente não altera o valor)
+    const deliveryFee = 0;
+
     const order = await prisma.$transaction(async (tx) => {
       // Confere a mesa
       if (serviceType === "TABLE") {
         const table = await tx.restaurantTable.findFirst({
-          where: {
-            id: tableId,
-            active: true,
-          },
+          where: { id: tableId, active: true },
         });
 
         if (!table) {
@@ -126,10 +172,20 @@ export async function POST(request: Request) {
         data: {
           serviceType,
           tableId: serviceType === "TABLE" ? tableId : null,
-          customerName: customerName || null,
-          notes: notes || null,
+          customerName: name,
+          customerPhone: isDelivery ? phone : null,
+          pickupCode: needsCode ? generatePickupCode() : null,
+          notes: clean(notes),
+
+          deliveryAddress: isDelivery ? address : null,
+          deliveryNumber: isDelivery ? number : null,
+          deliveryNeighborhood: isDelivery ? neighborhood : null,
+          deliveryComplement: isDelivery ? clean(deliveryComplement) : null,
+          deliveryReference: isDelivery ? clean(deliveryReference) : null,
+
           subtotal,
-          total: subtotal,
+          deliveryFee: isDelivery ? deliveryFee : 0,
+          total: subtotal + (isDelivery ? deliveryFee : 0),
 
           items: {
             create: orderItems,
@@ -139,7 +195,7 @@ export async function POST(request: Request) {
             create: {
               method,
               mode,
-              amount: subtotal,
+              amount: subtotal + (isDelivery ? deliveryFee : 0),
               status: "PENDING",
               provider: "MANUAL_TEST",
             },
@@ -163,8 +219,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Erro ao criar pedido:", error);
 
-    const message =
-      error instanceof Error ? error.message : "";
+    const message = error instanceof Error ? error.message : "";
 
     if (message === "MESA_INVALIDA") {
       return NextResponse.json(
