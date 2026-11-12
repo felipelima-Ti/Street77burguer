@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -48,12 +47,12 @@ enum PaymentStatus {
 
 // Categorias do cardápio
 model Category {
-  id        String   @id @default(uuid())
-  name      String
-  slug      String   @unique
-  active    Boolean  @default(true)
+  id     String  @id @default(uuid())
+  name   String
+  slug   String  @unique
+  active Boolean @default(true)
 
-  products  Product[]
+  products Product[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -61,23 +60,23 @@ model Category {
 
 // Produtos
 model Product {
-  id          String   @id @default(uuid())
+  id          String  @id @default(uuid())
   name        String
   description String?
   image       String?
   price       Int
-  stock       Int      @default(0)
-  barcode     String?  @unique
-  available   Boolean  @default(true)
-  position Int @default(0)
+  stock       Int     @default(0)
+  barcode     String? @unique
+  available   Boolean @default(true)
+  position    Int     @default(0)
 
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
 
-  orderItems  OrderItem[]
+  orderItems OrderItem[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([categoryId])
   @@index([available])
@@ -85,11 +84,11 @@ model Product {
 
 // Mesas
 model RestaurantTable {
-  id        String   @id @default(uuid())
-  number    Int      @unique
-  active    Boolean  @default(true)
+  id     String  @id @default(uuid())
+  number Int     @unique
+  active Boolean @default(true)
 
-  orders    Order[]
+  orders Order[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -97,55 +96,56 @@ model RestaurantTable {
 
 // Pedidos
 model Order {
-  id           String      @id @default(uuid())
-  orderNumber  Int         @unique @default(autoincrement())
+  id          String @id @default(uuid())
+  orderNumber Int    @unique @default(autoincrement())
 
-  serviceType  ServiceType
-  status       OrderStatus @default(PENDING_PAYMENT)
+  serviceType ServiceType
+  status      OrderStatus @default(PENDING_PAYMENT)
 
-  customerName String?
+  customerName  String?
   customerPhone String?
-  notes        String?
+  notes         String?
+
+  // Código de retirada: só preenchido em retirada e entrega
+  pickupCode String?
 
   // Endereço de entrega
-  deliveryAddress    String?
-  deliveryNumber     String?
+  deliveryAddress      String?
+  deliveryNumber       String?
   deliveryNeighborhood String?
-  deliveryComplement String?
-  deliveryReference  String?
+  deliveryComplement   String?
+  deliveryReference    String?
 
   // Valores armazenados em centavos
-  subtotal     Int
-  deliveryFee  Int         @default(0)
-  total        Int
+  subtotal    Int
+  deliveryFee Int @default(0)
+  total       Int
 
-  tableId      String?
-  table        RestaurantTable? @relation(fields: [tableId], references: [id], onDelete: Restrict)
+  tableId String?
+  table   RestaurantTable? @relation(fields: [tableId], references: [id], onDelete: Restrict)
 
-  items        OrderItem[]
-  payments     Payment[]
+  items    OrderItem[]
+  payments Payment[]
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([createdAt])
   @@index([tableId])
   @@index([serviceType])
-
-  // ...campos existentes
-  pickupCode String? // só preenchido em RETIRADA e ENTREGA
+  @@index([pickupCode])
 }
 
 // Itens dos pedidos
 model OrderItem {
-  id          String  @id @default(uuid())
+  id String @id @default(uuid())
 
-  orderId     String
-  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  productId   String?
-  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 
   // Dados históricos do produto
   productName String
@@ -159,23 +159,23 @@ model OrderItem {
 
 // Pagamentos
 model Payment {
-  id             String        @id @default(uuid())
+  id String @id @default(uuid())
 
-  orderId        String
-  order          Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  method         PaymentMethod
-  mode           PaymentMode
-  status         PaymentStatus @default(PENDING)
+  method PaymentMethod
+  mode   PaymentMode
+  status PaymentStatus @default(PENDING)
 
-  amount         Int
+  amount Int
 
   provider       String?
-  externalId     String?       @unique
-  idempotencyKey String?       @unique
+  externalId     String? @unique
+  idempotencyKey String? @unique
 
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([orderId])
   @@index([status])
