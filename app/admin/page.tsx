@@ -145,18 +145,18 @@ export default async function AdminPage({
   ];
 
   return (
-    <main className="min-h-screen bg-[#111] p-5 text-white">
+    <main className="min-h-screen bg-[#0A0A0A] p-5 text-white">
       <div className="mx-auto max-w-6xl">
         <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-2xl font-black">
-            STREET<span className="text-[#D4AF37]">77</span>{" "}
+          <h1 className="flex items-center gap-3">
+            <img src="/logo.png" alt="Street77 Burger" className="h-14 w-auto" />
             <span className="text-base font-bold text-gray-400">Painel</span>
           </h1>
 
           <div className="flex gap-2">
             <Link
               href="/admin/produtos"
-              className="rounded-xl bg-[#D4AF37] px-4 py-2 text-sm font-black text-black hover:bg-[#E6C65C]"
+              className="rounded-xl bg-[#E8801C] px-4 py-2 text-sm font-black text-black hover:bg-[#F29A45]"
             >
               Cadastrar produto
             </Link>
@@ -178,7 +178,7 @@ export default async function AdminPage({
                 href={tab.value ? `/admin?status=${tab.value}` : "/admin"}
                 className={`whitespace-nowrap rounded-xl px-5 py-3 text-sm font-bold ${
                   selected
-                    ? "bg-[#D4AF37] text-black"
+                    ? "bg-[#E8801C] text-black"
                     : "bg-[#222] text-gray-300 hover:bg-[#333]"
                 }`}
               >
@@ -206,7 +206,7 @@ export default async function AdminPage({
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="text-2xl font-black text-[#D4AF37]">
+                    <p className="text-2xl font-black text-[#E8801C]">
                       #{order.orderNumber}
                     </p>
                     <p className="text-sm text-gray-400">
@@ -215,7 +215,7 @@ export default async function AdminPage({
                     </p>
                   </div>
 
-                  <span className="rounded-full bg-[#D4AF37]/15 px-3 py-1 text-xs font-bold text-[#E6C65C]">
+                  <span className="rounded-full bg-[#E8801C]/15 px-3 py-1 text-xs font-bold text-[#F29A45]">
                     {STATUS[current] ?? order.status}
                   </span>
                 </div>
@@ -227,7 +227,7 @@ export default async function AdminPage({
                 {order.pickupCode && (
                   <p className="mt-1 text-sm text-gray-400">
                     Código:{" "}
-                    <span className="font-black tracking-widest text-[#E6C65C]">
+                    <span className="font-black tracking-widest text-[#F29A45]">
                       {order.pickupCode}
                     </span>
                   </p>
@@ -266,7 +266,7 @@ export default async function AdminPage({
 
                 <div className="mt-4 flex justify-between font-black">
                   <span>Total</span>
-                  <span className="text-[#D4AF37]">
+                  <span className="text-[#E8801C]">
                     {formatPrice(order.total)}
                   </span>
                 </div>
@@ -278,7 +278,7 @@ export default async function AdminPage({
                       <input type="hidden" name="status" value={next} />
                       <button
                         type="submit"
-                        className="w-full rounded-xl bg-[#D4AF37] py-3 text-sm font-black text-black hover:bg-[#E6C65C]"
+                        className="w-full rounded-xl bg-[#E8801C] py-3 text-sm font-black text-black hover:bg-[#F29A45]"
                       >
                         Marcar como {STATUS[next]}
                       </button>

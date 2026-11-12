@@ -260,13 +260,15 @@ export default function SelfCheckout({
   }
 
   return (
-    <main className="min-h-screen bg-[#111] text-white">
+    <main className="min-h-screen bg-[#0A0A0A] text-white">
       {/* HEADER */}
-      <header className="sticky top-0 z-30 border-b border-white/10 bg-[#151515]/95 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0A0A0A]/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
-          <div>
+          <img src="/logo.png" alt="" className="h-16 w-auto" />
+
+          <div className="sr-only">
             <h1 className="text-2xl font-black tracking-tight">
-              STREET<span className="text-[#D4AF37]">77</span>
+              STREET<span className="text-orange-500">77</span>
             </h1>
             <p className="text-xs tracking-[0.25em] text-gray-400">
               BURGUER
@@ -275,7 +277,7 @@ export default function SelfCheckout({
 
           <button
             onClick={() => setShowCheckout(true)}
-            className="relative flex items-center gap-2 rounded-xl bg-[#D4AF37] px-4 py-3 font-bold text-black transition hover:bg-[#E6C65C]"
+            className="relative flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-3 font-bold text-black transition hover:bg-orange-400"
           >
             <ShoppingCart size={20} />
             <span>Carrinho</span>
@@ -289,15 +291,15 @@ export default function SelfCheckout({
 
       <div className="mx-auto max-w-7xl px-5 py-8">
         {/* BANNER */}
-        <section className="mb-8 rounded-3xl border border-[#D4AF37]/20 bg-gradient-to-r from-[#2b2210] to-[#171717] p-8">
-          <span className="mb-3 inline-block rounded-full bg-[#D4AF37]/20 px-3 py-1 text-xs font-bold uppercase text-[#E6C65C]">
+        <section className="mb-8 rounded-3xl border border-orange-500/20 bg-gradient-to-r from-[#321607] to-[#171717] p-8">
+          <span className="mb-3 inline-block rounded-full bg-orange-500/20 px-3 py-1 text-xs font-bold uppercase text-orange-400">
             Peça agora
           </span>
 
           <h2 className="text-3xl font-black sm:text-5xl">
             SEU BURGER.
             <br />
-            <span className="text-[#D4AF37]">
+            <span className="text-orange-500">
               DO SEU JEITO.
             </span>
           </h2>
@@ -319,7 +321,7 @@ export default function SelfCheckout({
               onClick={() => setSelectedCategory("todos")}
               className={`whitespace-nowrap rounded-xl px-5 py-3 text-sm font-bold ${
                 selectedCategory === "todos"
-                  ? "bg-[#D4AF37] text-black"
+                  ? "bg-orange-500 text-black"
                   : "bg-[#222] text-gray-300 hover:bg-[#333]"
               }`}
             >
@@ -332,7 +334,7 @@ export default function SelfCheckout({
                 onClick={() => setSelectedCategory(category.id)}
                 className={`whitespace-nowrap rounded-xl px-5 py-3 text-sm font-bold ${
                   selectedCategory === category.id
-                    ? "bg-[#D4AF37] text-black"
+                    ? "bg-orange-500 text-black"
                     : "bg-[#222] text-gray-300 hover:bg-[#333]"
                 }`}
               >
@@ -353,7 +355,7 @@ export default function SelfCheckout({
             return (
               <article
                 key={product.id}
-                className="overflow-hidden rounded-2xl border border-white/10 bg-[#1c1c1c] transition hover:border-[#D4AF37]/50"
+                className="overflow-hidden rounded-2xl border border-white/10 bg-[#1c1c1c] transition hover:border-orange-500/50"
               >
                 <div className="flex h-44 items-center justify-center overflow-hidden bg-[#292929]">
                   {product.image ? (
@@ -365,7 +367,7 @@ export default function SelfCheckout({
                   ) : (
                     <Utensils
                       size={55}
-                      className="text-[#D4AF37]"
+                      className="text-orange-500"
                     />
                   )}
                 </div>
@@ -380,14 +382,14 @@ export default function SelfCheckout({
                   </p>
 
                   <div className="mt-5 flex items-center justify-between">
-                    <span className="text-lg font-black text-[#D4AF37]">
+                    <span className="text-lg font-black text-orange-500">
                       {formatPrice(product.price)}
                     </span>
 
                     <button
                       onClick={() => addToCart(product)}
                       disabled={product.stock <= 0}
-                      className="flex items-center gap-2 rounded-xl bg-[#D4AF37] px-4 py-2 font-bold text-black transition hover:bg-[#E6C65C] disabled:cursor-not-allowed disabled:opacity-40"
+                      className="flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2 font-bold text-black transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <Plus size={18} />
                       {product.stock <= 0 ? "Esgotado" : "Adicionar"}
@@ -395,7 +397,7 @@ export default function SelfCheckout({
                   </div>
 
                   {quantity > 0 && (
-                    <p className="mt-3 text-xs text-[#E6C65C]">
+                    <p className="mt-3 text-xs text-orange-400">
                       {quantity} no carrinho
                     </p>
                   )}
@@ -430,7 +432,7 @@ export default function SelfCheckout({
             </div>
 
             {/* ITENS */}
-            <h3 className="mb-3 font-bold text-[#D4AF37]">
+            <h3 className="mb-3 font-bold text-orange-500">
               SEU CARRINHO
             </h3>
 
@@ -449,7 +451,7 @@ export default function SelfCheckout({
                       <p className="truncate font-bold">
                         {item.product.name}
                       </p>
-                      <p className="text-sm text-[#E6C65C]">
+                      <p className="text-sm text-orange-400">
                         {formatPrice(item.product.price * item.quantity)}
                       </p>
                     </div>
@@ -494,7 +496,7 @@ export default function SelfCheckout({
 
             {/* ATENDIMENTO */}
             <div className="mt-7">
-              <h3 className="mb-3 font-bold text-[#D4AF37]">
+              <h3 className="mb-3 font-bold text-orange-500">
                 COMO DESEJA RECEBER?
               </h3>
 
@@ -507,7 +509,7 @@ export default function SelfCheckout({
                   }}
                   className={`flex items-center justify-center gap-2 rounded-xl border p-4 font-bold ${
                     serviceType === "COUNTER"
-                      ? "border-[#D4AF37] bg-[#D4AF37]/10 text-[#E6C65C]"
+                      ? "border-orange-500 bg-orange-500/10 text-orange-400"
                       : "border-white/10 bg-[#292929]"
                   }`}
                 >
@@ -520,7 +522,7 @@ export default function SelfCheckout({
                   onClick={() => setServiceType("TABLE")}
                   className={`flex items-center justify-center gap-2 rounded-xl border p-4 font-bold ${
                     serviceType === "TABLE"
-                      ? "border-[#D4AF37] bg-[#D4AF37]/10 text-[#E6C65C]"
+                      ? "border-orange-500 bg-orange-500/10 text-orange-400"
                       : "border-white/10 bg-[#292929]"
                   }`}
                 >
@@ -536,7 +538,7 @@ export default function SelfCheckout({
                   }}
                   className={`flex items-center justify-center gap-2 rounded-xl border p-4 font-bold ${
                     serviceType === "DELIVERY"
-                      ? "border-[#D4AF37] bg-[#D4AF37]/10 text-[#E6C65C]"
+                      ? "border-orange-500 bg-orange-500/10 text-orange-400"
                       : "border-white/10 bg-[#292929]"
                   }`}
                 >
@@ -554,7 +556,7 @@ export default function SelfCheckout({
                   <select
                     value={tableId}
                     onChange={(e) => setTableId(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-[#292929] p-3 outline-none focus:border-[#D4AF37]"
+                    className="w-full rounded-xl border border-white/10 bg-[#292929] p-3 outline-none focus:border-orange-500"
                   >
                     <option value="">Selecione uma mesa</option>
                     {tables.map((table) => (
@@ -567,8 +569,8 @@ export default function SelfCheckout({
               )}
 
               {serviceType === "DELIVERY" && (
-                <div className="mt-5 space-y-3 rounded-xl border border-[#D4AF37]/20 bg-[#242424] p-4">
-                  <h4 className="font-bold text-[#E6C65C]">
+                <div className="mt-5 space-y-3 rounded-xl border border-orange-500/20 bg-[#242424] p-4">
+                  <h4 className="font-bold text-orange-400">
                     ENDEREÇO DE ENTREGA
                   </h4>
 
@@ -577,7 +579,7 @@ export default function SelfCheckout({
                     onChange={(e) => setCustomerPhone(e.target.value)}
                     placeholder="Telefone para contato *"
                     maxLength={20}
-                    className="w-full rounded-xl border border-white/10 bg-[#292929] p-3 outline-none focus:border-[#D4AF37]"
+                    className="w-full rounded-xl border border-white/10 bg-[#292929] p-3 outline-none focus:border-orange-500"
                   />
 
                   <input
@@ -585,7 +587,7 @@ export default function SelfCheckout({
                     onChange={(e) => setDeliveryAddress(e.target.value)}
                     placeholder="Rua ou avenida *"
                     maxLength={150}
-                    className="w-full rounded-xl border border-white/10 bg-[#292929] p-3 outline-none focus:border-[#D4AF37]"
+                    className="w-full rounded-xl border border-white/10 bg-[#292929] p-3 outline-none focus:border-orange-500"
                   />
 
                   <div className="grid grid-cols-2 gap-3">
@@ -594,7 +596,7 @@ export default function SelfCheckout({
                       onChange={(e) => setDeliveryNumber(e.target.value)}
                       placeholder="Número *"
                       maxLength={20}
-                      className="w-full min-w-0 rounded-xl border border-white/10 bg-[#292929] p-3 outline-none focus:border-[#D4AF37]"
+                      className="w-full min-w-0 rounded-xl border border-white/10 bg-[#292929] p-3 outline-none focus:border-orange-500"
                     />
 
                     <input
@@ -602,7 +604,7 @@ export default function SelfCheckout({
                       onChange={(e) => setDeliveryNeighborhood(e.target.value)}
                       placeholder="Bairro *"
                       maxLength={100}
-                      className="w-full min-w-0 rounded-xl border border-white/10 bg-[#292929] p-3 outline-none focus:border-[#D4AF37]"
+                      className="w-full min-w-0 rounded-xl border border-white/10 bg-[#292929] p-3 outline-none focus:border-orange-500"
                     />
                   </div>
 
@@ -611,7 +613,7 @@ export default function SelfCheckout({
                     onChange={(e) => setDeliveryComplement(e.target.value)}
                     placeholder="Complemento (opcional)"
                     maxLength={100}
-                    className="w-full rounded-xl border border-white/10 bg-[#292929] p-3 outline-none focus:border-[#D4AF37]"
+                    className="w-full rounded-xl border border-white/10 bg-[#292929] p-3 outline-none focus:border-orange-500"
                   />
 
                   <input
@@ -619,7 +621,7 @@ export default function SelfCheckout({
                     onChange={(e) => setDeliveryReference(e.target.value)}
                     placeholder="Ponto de referência (opcional)"
                     maxLength={150}
-                    className="w-full rounded-xl border border-white/10 bg-[#292929] p-3 outline-none focus:border-[#D4AF37]"
+                    className="w-full rounded-xl border border-white/10 bg-[#292929] p-3 outline-none focus:border-orange-500"
                   />
 
                   <p className="text-xs text-gray-400">
@@ -631,7 +633,7 @@ export default function SelfCheckout({
 
             {/* CLIENTE */}
             <div className="mt-7 space-y-3">
-              <h3 className="font-bold text-[#D4AF37]">
+              <h3 className="font-bold text-orange-500">
                 INFORMAÇÕES
               </h3>
 
@@ -644,7 +646,7 @@ export default function SelfCheckout({
                     : "Nome do cliente *"
                 }
                 maxLength={80}
-                className="w-full rounded-xl border border-white/10 bg-[#292929] p-3 outline-none focus:border-[#D4AF37]"
+                className="w-full rounded-xl border border-white/10 bg-[#292929] p-3 outline-none focus:border-orange-500"
               />
 
               <textarea
@@ -653,13 +655,13 @@ export default function SelfCheckout({
                 placeholder="Observações do pedido (opcional)"
                 maxLength={300}
                 rows={3}
-                className="w-full resize-none rounded-xl border border-white/10 bg-[#292929] p-3 outline-none focus:border-[#D4AF37]"
+                className="w-full resize-none rounded-xl border border-white/10 bg-[#292929] p-3 outline-none focus:border-orange-500"
               />
             </div>
 
             {/* PAGAMENTO */}
             <div className="mt-7">
-              <h3 className="mb-3 font-bold text-[#D4AF37]">
+              <h3 className="mb-3 font-bold text-orange-500">
                 FORMA DE PAGAMENTO
               </h3>
 
@@ -668,7 +670,7 @@ export default function SelfCheckout({
                   onClick={() => setMethod("PIX")}
                   className={`flex items-center justify-center gap-2 rounded-xl border p-4 font-bold ${
                     method === "PIX"
-                      ? "border-[#D4AF37] bg-[#D4AF37]/10 text-[#E6C65C]"
+                      ? "border-orange-500 bg-orange-500/10 text-orange-400"
                       : "border-white/10 bg-[#292929]"
                   }`}
                 >
@@ -680,7 +682,7 @@ export default function SelfCheckout({
                   onClick={() => setMethod("CARD")}
                   className={`flex items-center justify-center gap-2 rounded-xl border p-4 font-bold ${
                     method === "CARD"
-                      ? "border-[#D4AF37] bg-[#D4AF37]/10 text-[#E6C65C]"
+                      ? "border-orange-500 bg-orange-500/10 text-orange-400"
                       : "border-white/10 bg-[#292929]"
                   }`}
                 >
@@ -694,7 +696,7 @@ export default function SelfCheckout({
                   onClick={() => setMode("ONLINE")}
                   className={`rounded-xl border p-3 text-sm font-bold ${
                     mode === "ONLINE"
-                      ? "border-[#D4AF37] text-[#E6C65C]"
+                      ? "border-orange-500 text-orange-400"
                       : "border-white/10 text-gray-400"
                   }`}
                 >
@@ -705,7 +707,7 @@ export default function SelfCheckout({
                   onClick={() => setMode("TERMINAL")}
                   className={`rounded-xl border p-3 text-sm font-bold ${
                     mode === "TERMINAL"
-                      ? "border-[#D4AF37] text-[#E6C65C]"
+                      ? "border-orange-500 text-orange-400"
                       : "border-white/10 text-gray-400"
                   }`}
                 >
@@ -735,7 +737,7 @@ export default function SelfCheckout({
 
               <div className="mt-3 flex justify-between text-xl font-black">
                 <span>Total</span>
-                <span className="text-[#D4AF37]">
+                <span className="text-orange-500">
                   {formatPrice(finalTotal)}
                 </span>
               </div>
@@ -750,7 +752,7 @@ export default function SelfCheckout({
             <button
               onClick={finalizeOrder}
               disabled={loading || cart.length === 0}
-              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4AF37] py-4 font-black text-black transition hover:bg-[#E6C65C] disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 py-4 font-black text-black transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? (
                 <>
@@ -790,15 +792,15 @@ export default function SelfCheckout({
                 Número do pedido
               </p>
 
-              <p className="mt-1 text-4xl font-black text-[#D4AF37]">
+              <p className="mt-1 text-4xl font-black text-orange-500">
                 #{finishedOrder}
               </p>
             </div>
 
             {pickupCode && (
-              <div className="mb-6 rounded-2xl border border-[#D4AF37]/40 bg-[#292929] p-5">
+              <div className="mb-6 rounded-2xl border border-orange-500/40 bg-[#292929] p-5">
                 <p className="text-sm text-gray-400">Código de retirada</p>
-                <p className="mt-1 text-5xl font-black tracking-[0.3em] text-[#D4AF37]">
+                <p className="mt-1 text-5xl font-black tracking-[0.3em] text-orange-500">
                   {pickupCode}
                 </p>
                 <p className="mt-2 text-xs text-gray-400">
@@ -816,7 +818,7 @@ export default function SelfCheckout({
                 setShowSuccess(false);
                 setPickupCode(null);
               }}
-              className="w-full rounded-xl bg-[#D4AF37] py-3 font-black text-black hover:bg-[#E6C65C]"
+              className="w-full rounded-xl bg-orange-500 py-3 font-black text-black hover:bg-orange-400"
             >
               VOLTAR AO CARDÁPIO
             </button>

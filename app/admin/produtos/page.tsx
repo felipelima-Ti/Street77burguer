@@ -236,7 +236,7 @@ function formatPrice(cents: number) {
 }
 
 const inputClass =
-  "w-full rounded-xl border border-white/10 bg-[#222] px-4 py-3 text-sm text-white placeholder:text-gray-500 focus:border-[#D4AF37] focus:outline-none";
+  "w-full rounded-xl border border-white/10 bg-[#222] px-4 py-3 text-sm text-white placeholder:text-gray-500 focus:border-[#E8801C] focus:outline-none";
 
 export default async function NewProductPage({
   searchParams,
@@ -276,11 +276,12 @@ export default async function NewProductPage({
   }
 
   return (
-    <main className="min-h-screen bg-[#111] p-5 text-white">
+    <main className="min-h-screen bg-[#0A0A0A] p-5 text-white">
       <div className="mx-auto max-w-5xl">
         <header className="mb-6 flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-black">
-            Cadastrar <span className="text-[#D4AF37]">produto</span>
+          <h1 className="flex items-center gap-3 text-2xl font-black">
+            <img src="/logo.png" alt="" className="h-12 w-auto" />
+            Cadastrar <span className="text-[#E8801C]">produto</span>
           </h1>
           <Link
             href="/admin"
@@ -404,7 +405,7 @@ export default async function NewProductPage({
               name="photo"
               type="file"
               accept="image/jpeg,image/png,image/webp"
-              className="w-full text-sm text-gray-300 file:mr-3 file:rounded-xl file:border-0 file:bg-[#D4AF37] file:px-4 file:py-2 file:text-sm file:font-black file:text-black hover:file:bg-[#E6C65C]"
+              className="w-full text-sm text-gray-300 file:mr-3 file:rounded-xl file:border-0 file:bg-[#E8801C] file:px-4 file:py-2 file:text-sm file:font-black file:text-black hover:file:bg-[#F29A45]"
             />
             <p className="mt-1 text-xs text-gray-500">
               JPG, PNG ou WebP, até 2 MB.
@@ -413,14 +414,14 @@ export default async function NewProductPage({
 
           <button
             type="submit"
-            className="rounded-xl bg-[#D4AF37] py-3 text-sm font-black text-black hover:bg-[#E6C65C] sm:col-span-2"
+            className="rounded-xl bg-[#E8801C] py-3 text-sm font-black text-black hover:bg-[#F29A45] sm:col-span-2"
           >
             Salvar produto
           </button>
         </form>
 
         <h2 className="mb-3 mt-10 text-xl font-black">
-          Produtos <span className="text-[#D4AF37]">cadastrados</span>
+          Produtos <span className="text-[#E8801C]">cadastrados</span>
         </h2>
 
         {products.length === 0 && (
@@ -435,7 +436,7 @@ export default async function NewProductPage({
             <section key={group.id} aria-labelledby={`cat-${group.id}`}>
               <h3
                 id={`cat-${group.id}`}
-                className="mb-2 text-xs font-black uppercase tracking-widest text-[#D4AF37]"
+                className="mb-2 text-xs font-black uppercase tracking-widest text-[#E8801C]"
               >
                 {group.name}
               </h3>
@@ -480,7 +481,7 @@ export default async function NewProductPage({
                 href={`/admin/produtos?editar=${product.id}`}
                 scroll={false}
                 aria-label={`Editar ${product.name}`}
-                className="shrink-0 rounded-lg bg-[#D4AF37] px-3 py-2 text-xs font-black text-black hover:bg-[#E6C65C]"
+                className="shrink-0 rounded-lg bg-[#E8801C] px-3 py-2 text-xs font-black text-black hover:bg-[#F29A45]"
               >
                 Editar
               </Link>
@@ -523,7 +524,7 @@ export default async function NewProductPage({
                 )}
 
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-black uppercase tracking-widest text-[#D4AF37]">
+                  <p className="text-xs font-black uppercase tracking-widest text-[#E8801C]">
                     {editing.category.name}
                   </p>
                   <h2 id="edit-title" className="truncate text-2xl font-black">
@@ -613,7 +614,7 @@ export default async function NewProductPage({
                     name="photo"
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
-                    className="w-full text-sm text-gray-300 file:mr-3 file:rounded-xl file:border-0 file:bg-[#D4AF37] file:px-4 file:py-2 file:text-sm file:font-black file:text-black hover:file:bg-[#E6C65C]"
+                    className="w-full text-sm text-gray-300 file:mr-3 file:rounded-xl file:border-0 file:bg-[#E8801C] file:px-4 file:py-2 file:text-sm file:font-black file:text-black hover:file:bg-[#F29A45]"
                   />
                   <p className="mt-1 text-xs text-gray-500">
                     JPG, PNG ou WebP, até 2 MB. Sem arquivo, a foto atual é mantida.
@@ -622,7 +623,7 @@ export default async function NewProductPage({
 
                 <button
                   type="submit"
-                  className="col-span-2 rounded-xl bg-[#D4AF37] py-3 text-sm font-black text-black hover:bg-[#E6C65C]"
+                  className="col-span-2 rounded-xl bg-[#E8801C] py-3 text-sm font-black text-black hover:bg-[#F29A45]"
                 >
                   Salvar alterações
                 </button>
