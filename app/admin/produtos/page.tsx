@@ -87,12 +87,70 @@ async function createProduct(formData: FormData) {
       available: true,
       position: (last._max.position ?? 0) + 1,
       categoryId,
-      image:imageUrl,
+      image: imageUrl,
     },
   });
 
   revalidatePath("/");
   redirect("/admin/produtos?ok=1");
+}
+
+const failWith = (message: string): never =>
+  redirect(`/admin/produtos?erro=${encodeURIComponent(message)}`);
+
+// Edita valor, estoque e descrição de um produto existente
+async function updateProduct(formData: FormData) {
+  "use server";
+
+  const id = String(formData.get("id") ?? "");
+  const description = String(formData.get("description") ?? "").trim();
+  const price = parsePrice(String(formData.get("price") ?? ""));
+  const stock = Number(formData.get("stock"));
+
+  if (!id) failWith("Produto inválido.");
+  if (price === null) failWith("Informe um valor válido, ex.: 29,90.");
+  if (!Number.isInteger(stock) || stock < 0) failWith("Estoque inválido.");
+
+  try {
+    await prisma.product.update({
+      where: { id },
+      data: {
+        price: price!,
+        stock,
+        description: description || null,
+      },
+    });
+  } catch (error) {
+    console.error("Erro ao atualizar produto:", error);
+    failWith("Não foi possível atualizar o produto.");
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin/produtos");
+  redirect("/admin/produtos?ok=2");
+}
+
+// Liga/desliga o produto no cardápio (não apaga: pedidos antigos referenciam ele)
+async function toggleProduct(formData: FormData) {
+  "use server";
+
+  const id = String(formData.get("id") ?? "");
+  const available = formData.get("available") === "true";
+  if (!id) return;
+
+  try {
+    await prisma.product.update({ where: { id }, data: { available } });
+  } catch (error) {
+    console.error("Erro ao alterar disponibilidade:", error);
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin/produtos");
+}
+
+// 2990 -> "29,90"
+function priceToInput(cents: number) {
+  return (cents / 100).toFixed(2).replace(".", ",");
 }
 
 const inputClass =
@@ -108,6 +166,11 @@ export default async function NewProductPage({
   const categories = await prisma.category.findMany({
     where: { active: true },
     orderBy: { name: "asc" },
+  });
+
+  const products = await prisma.product.findMany({
+    orderBy: { position: "asc" },
+    include: { category: true },
   });
 
   return (
@@ -130,7 +193,9 @@ export default async function NewProductPage({
             role="status"
             className="mb-4 rounded-xl bg-emerald-500/15 p-3 text-sm font-bold text-emerald-400"
           >
-            Produto cadastrado! Ele já aparece no cardápio.
+            {ok === "2"
+              ? "Produto atualizado."
+              : "Produto cadastrado! Ele já aparece no cardápio."}
           </p>
         )}
 
@@ -252,6 +317,136 @@ export default async function NewProductPage({
             Salvar produto
           </button>
         </form>
+
+        <h2 className="mb-3 mt-10 text-xl font-black">
+          Produtos <span className="text-[#D4AF37]">cadastrados</span>
+        </h2>
+
+        {products.length === 0 && (
+          <p className="py-6 text-center text-gray-400">
+            Nenhum produto cadastrado.
+          </p>
+        )}
+
+        <ul className="space-y-4">
+          {products.map((product) => (
+            <li
+              key={product.id}
+              className={`rounded-2xl border border-white/10 bg-[#1c1c1c] p-4 ${
+                product.available ? "" : "opacity-60"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                {product.image ? (
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="h-14 w-14 rounded-xl object-cover"
+                  />
+                ) : (
+                  <div
+                    aria-hidden="true"
+                    className="h-14 w-14 rounded-xl bg-[#292929]"
+                  />
+                )}
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-black">{product.name}</p>
+                  <p className="text-xs text-gray-400">
+                    {product.category.name}
+                    {!product.available && " · Fora do cardápio"}
+                    {product.available && product.stock === 0 && " · Sem estoque"}
+                  </p>
+                </div>
+              </div>
+
+              <form action={updateProduct} className="mt-4 grid grid-cols-2 gap-3">
+                <input type="hidden" name="id" value={product.id} />
+
+                <div>
+                  <label
+                    htmlFor={`price-${product.id}`}
+                    className="mb-1 block text-xs font-bold"
+                  >
+                    Valor (R$)
+                  </label>
+                  <input
+                    id={`price-${product.id}`}
+                    name="price"
+                    required
+                    inputMode="decimal"
+                    defaultValue={priceToInput(product.price)}
+                    className={inputClass}
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor={`stock-${product.id}`}
+                    className="mb-1 block text-xs font-bold"
+                  >
+                    Estoque
+                  </label>
+                  <input
+                    id={`stock-${product.id}`}
+                    name="stock"
+                    type="number"
+                    min={0}
+                    step={1}
+                    required
+                    defaultValue={product.stock}
+                    className={inputClass}
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label
+                    htmlFor={`description-${product.id}`}
+                    className="mb-1 block text-xs font-bold"
+                  >
+                    Descrição
+                  </label>
+                  <textarea
+                    id={`description-${product.id}`}
+                    name="description"
+                    rows={2}
+                    maxLength={300}
+                    defaultValue={product.description ?? ""}
+                    className={inputClass}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="col-span-2 rounded-xl bg-[#D4AF37] py-3 text-sm font-black text-black hover:bg-[#E6C65C]"
+                >
+                  Salvar alterações
+                </button>
+              </form>
+
+              <form action={toggleProduct} className="mt-2">
+                <input type="hidden" name="id" value={product.id} />
+                <input
+                  type="hidden"
+                  name="available"
+                  value={String(!product.available)}
+                />
+                <button
+                  type="submit"
+                  className={`w-full rounded-xl py-3 text-sm font-bold ${
+                    product.available
+                      ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                      : "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
+                  }`}
+                >
+                  {product.available
+                    ? "Tirar do cardápio"
+                    : "Colocar no cardápio"}
+                </button>
+              </form>
+            </li>
+          ))}
+        </ul>
       </div>
     </main>
   );
