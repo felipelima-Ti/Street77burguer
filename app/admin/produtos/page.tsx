@@ -153,15 +153,22 @@ function priceToInput(cents: number) {
   return (cents / 100).toFixed(2).replace(".", ",");
 }
 
+function formatPrice(cents: number) {
+  return (cents / 100).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
 const inputClass =
   "w-full rounded-xl border border-white/10 bg-[#222] px-4 py-3 text-sm text-white placeholder:text-gray-500 focus:border-[#D4AF37] focus:outline-none";
 
 export default async function NewProductPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ok?: string; erro?: string }>;
+  searchParams: Promise<{ ok?: string; erro?: string; editar?: string }>;
 }) {
-  const { ok, erro } = await searchParams;
+  const { ok, erro, editar } = await searchParams;
 
   const categories = await prisma.category.findMany({
     where: { active: true },
@@ -172,6 +179,9 @@ export default async function NewProductPage({
     orderBy: { position: "asc" },
     include: { category: true },
   });
+
+  // Produto aberto na tela de edição (via ?editar=ID)
+  const editing = editar ? products.find((p) => p.id === editar) : null;
 
   return (
     <main className="min-h-screen bg-[#111] p-5 text-white">
@@ -328,90 +338,158 @@ export default async function NewProductPage({
           </p>
         )}
 
-        <ul className="space-y-4">
+        {/* Lista compacta: cada card tem um botão Editar */}
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {products.map((product) => (
             <li
               key={product.id}
-              className={`rounded-2xl border border-white/10 bg-[#1c1c1c] p-4 ${
-                product.available ? "" : "opacity-60"
-              }`}
+              className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#1c1c1c] p-3"
             >
-              <div className="flex items-center gap-3">
-                {product.image ? (
+              {product.image ? (
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                />
+              ) : (
+                <div
+                  aria-hidden="true"
+                  className="h-12 w-12 shrink-0 rounded-lg bg-[#292929]"
+                />
+              )}
+
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-black">{product.name}</p>
+                <p className="truncate text-xs text-gray-400">
+                  {formatPrice(product.price)} · {product.category.name}
+                </p>
+                {!product.available && (
+                  <p className="text-xs font-bold text-amber-400">
+                    Fora do cardápio
+                  </p>
+                )}
+                {product.available && product.stock === 0 && (
+                  <p className="text-xs font-bold text-amber-400">
+                    Sem estoque
+                  </p>
+                )}
+              </div>
+
+              <Link
+                href={`/admin/produtos?editar=${product.id}`}
+                scroll={false}
+                aria-label={`Editar ${product.name}`}
+                className="shrink-0 rounded-lg bg-[#D4AF37] px-3 py-2 text-xs font-black text-black hover:bg-[#E6C65C]"
+              >
+                Editar
+              </Link>
+            </li>
+          ))}
+        </ul>
+
+        {/* Tela de edição (abre com ?editar=ID) */}
+        {editing && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-title"
+            className="fixed inset-0 z-50 flex items-center justify-center p-3"
+          >
+            {/* Fundo: clicar fecha a tela */}
+            <Link
+              href="/admin/produtos"
+              scroll={false}
+              aria-label="Fechar"
+              className="absolute inset-0 bg-black/80"
+            />
+
+            <div className="relative max-h-[95vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-white/10 bg-[#1b1b1b] p-5 sm:p-7">
+              <div className="mb-6 flex items-center gap-4">
+                {editing.image ? (
                   <img
-                    src={product.image}
-                    alt={product.name}
-                    className="h-14 w-14 rounded-xl object-cover"
+                    src={editing.image}
+                    alt={editing.name}
+                    className="h-20 w-20 shrink-0 rounded-2xl object-cover"
                   />
                 ) : (
                   <div
                     aria-hidden="true"
-                    className="h-14 w-14 rounded-xl bg-[#292929]"
+                    className="h-20 w-20 shrink-0 rounded-2xl bg-[#292929]"
                   />
                 )}
 
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-black">{product.name}</p>
-                  <p className="text-xs text-gray-400">
-                    {product.category.name}
-                    {!product.available && " · Fora do cardápio"}
-                    {product.available && product.stock === 0 && " · Sem estoque"}
+                  <h2 id="edit-title" className="truncate text-2xl font-black">
+                    {editing.name}
+                  </h2>
+                  <p className="text-sm text-gray-400">
+                    {editing.category.name}
+                    {!editing.available && " · Fora do cardápio"}
                   </p>
                 </div>
+
+                <Link
+                  href="/admin/produtos"
+                  scroll={false}
+                  aria-label="Fechar"
+                  className="shrink-0 rounded-lg bg-[#333] px-3 py-2 text-lg font-bold leading-none hover:bg-[#444]"
+                >
+                  ×
+                </Link>
               </div>
 
-              <form action={updateProduct} className="mt-4 grid grid-cols-2 gap-3">
-                <input type="hidden" name="id" value={product.id} />
+              <form action={updateProduct} className="grid grid-cols-2 gap-4">
+                <input type="hidden" name="id" value={editing.id} />
 
                 <div>
                   <label
-                    htmlFor={`price-${product.id}`}
-                    className="mb-1 block text-xs font-bold"
+                    htmlFor="edit-price"
+                    className="mb-1 block text-sm font-bold"
                   >
                     Valor (R$)
                   </label>
                   <input
-                    id={`price-${product.id}`}
+                    id="edit-price"
                     name="price"
                     required
                     inputMode="decimal"
-                    defaultValue={priceToInput(product.price)}
+                    defaultValue={priceToInput(editing.price)}
                     className={inputClass}
                   />
                 </div>
 
                 <div>
                   <label
-                    htmlFor={`stock-${product.id}`}
-                    className="mb-1 block text-xs font-bold"
+                    htmlFor="edit-stock"
+                    className="mb-1 block text-sm font-bold"
                   >
                     Estoque
                   </label>
                   <input
-                    id={`stock-${product.id}`}
+                    id="edit-stock"
                     name="stock"
                     type="number"
                     min={0}
                     step={1}
                     required
-                    defaultValue={product.stock}
+                    defaultValue={editing.stock}
                     className={inputClass}
                   />
                 </div>
 
                 <div className="col-span-2">
                   <label
-                    htmlFor={`description-${product.id}`}
-                    className="mb-1 block text-xs font-bold"
+                    htmlFor="edit-description"
+                    className="mb-1 block text-sm font-bold"
                   >
                     Descrição
                   </label>
                   <textarea
-                    id={`description-${product.id}`}
+                    id="edit-description"
                     name="description"
-                    rows={2}
+                    rows={4}
                     maxLength={300}
-                    defaultValue={product.description ?? ""}
+                    defaultValue={editing.description ?? ""}
                     className={inputClass}
                   />
                 </div>
@@ -424,29 +502,29 @@ export default async function NewProductPage({
                 </button>
               </form>
 
-              <form action={toggleProduct} className="mt-2">
-                <input type="hidden" name="id" value={product.id} />
+              <form action={toggleProduct} className="mt-3">
+                <input type="hidden" name="id" value={editing.id} />
                 <input
                   type="hidden"
                   name="available"
-                  value={String(!product.available)}
+                  value={String(!editing.available)}
                 />
                 <button
                   type="submit"
                   className={`w-full rounded-xl py-3 text-sm font-bold ${
-                    product.available
+                    editing.available
                       ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
                       : "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
                   }`}
                 >
-                  {product.available
+                  {editing.available
                     ? "Tirar do cardápio"
                     : "Colocar no cardápio"}
                 </button>
               </form>
-            </li>
-          ))}
-        </ul>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
