@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ShoppingCart,
   Plus,
@@ -103,6 +103,62 @@ export default function SelfCheckout({
       (product) => product.categoryId === selectedCategory
     );
   }, [products, selectedCategory]);
+
+  // Destaques do banner: sorteados só no cliente (evita erro de hidratação)
+  const [featured, setFeatured] = useState<Product[]>([]);
+  const [featuredVisible, setFeaturedVisible] = useState(true);
+
+  useEffect(() => {
+    // Prefere produtos com foto, se houver ao menos 3
+    const withImage = products.filter((p) => p.image);
+    const pool = withImage.length >= 3 ? withImage : products;
+
+    // Embaralha (Fisher-Yates) e pega 3
+    const draw = () => {
+      const copy = [...pool];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy.slice(0, 3);
+    };
+
+    setFeatured(draw());
+    if (pool.length <= 3) return;
+
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const interval = setInterval(() => {
+      setFeaturedVisible(false); // fade out
+      timeout = setTimeout(() => {
+        setFeatured(draw());
+        setFeaturedVisible(true); // fade in
+      }, 400);
+    }, 7000);
+
+    return () => {
+      clearInterval(interval);
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [products]);
+
+  // [0] = esquerda, [1] = direita, [2] = centro (destaque, por cima)
+  const featuredSlots = [
+    {
+      product: featured[1],
+      className:
+        "left-0 top-[10%] w-[42%] -rotate-6 brightness-75",
+    },
+    {
+      product: featured[2],
+      className:
+        "right-0 top-[10%] w-[42%] rotate-6 brightness-75",
+    },
+    {
+      product: featured[0],
+      className:
+        "left-1/2 top-0 z-10 w-[56%] -translate-x-1/2 shadow-2xl shadow-black/60",
+    },
+  ];
 
   const totalItems = cart.reduce(
     (total, item) => total + item.quantity,
@@ -291,23 +347,66 @@ export default function SelfCheckout({
 
       <div className="mx-auto max-w-7xl px-5 py-8">
         {/* BANNER */}
-        <section className="mb-8 rounded-3xl border border-orange-500/20 bg-gradient-to-r from-[#321607] to-[#171717] p-8">
-          <span className="mb-3 inline-block rounded-full bg-orange-500/20 px-3 py-1 text-xs font-bold uppercase text-orange-400">
-            Peça agora
-          </span>
-
-          <h2 className="text-3xl font-black sm:text-5xl">
-            SEU BURGER.
-            <br />
-            <span className="text-orange-500">
-              DO SEU JEITO.
+        <section className="mb-8 grid items-center gap-8 overflow-hidden rounded-3xl border border-orange-500/20 bg-gradient-to-r from-[#321607] to-[#171717] p-6 sm:p-8 lg:grid-cols-2">
+          <div>
+            <span className="mb-3 inline-block rounded-full bg-orange-500/20 px-3 py-1 text-xs font-bold uppercase text-orange-400">
+              Peça agora
             </span>
-          </h2>
 
-          <p className="mt-4 max-w-md text-gray-400">
-            Escolha seus favoritos e faça seu pedido
-            diretamente pelo nosso autoatendimento.
-          </p>
+            <h2 className="text-3xl font-black sm:text-5xl">
+              SEU BURGER.
+              <br />
+              <span className="text-orange-500">
+                DO SEU JEITO.
+              </span>
+            </h2>
+
+            <p className="mt-4 max-w-md text-gray-400">
+              Escolha seus favoritos e faça seu pedido
+              diretamente pelo nosso autoatendimento.
+            </p>
+          </div>
+
+          {/* Composição decorativa: 1 produto central e 2 atrás, parcialmente cobertos */}
+          {products.length > 0 && (
+            <div
+              aria-hidden="true"
+              className={`relative mx-auto aspect-[4/3] w-full max-w-md transition-opacity duration-500 ${
+                featuredVisible ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              {featuredSlots.map(
+                (slot, index) =>
+                  slot.product && (
+                    <div
+                      key={`${slot.product.id}-${index}`}
+                      className={`absolute aspect-[4/5] overflow-hidden rounded-2xl border border-white/10 bg-[#292929] ${slot.className}`}
+                    >
+                      {slot.product.image ? (
+                        <img
+                          src={slot.product.image}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center">
+                          <Utensils className="h-1/3 w-1/3 text-orange-500" />
+                        </div>
+                      )}
+
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-2 pt-8 sm:p-3 sm:pt-10">
+                        <p className="truncate text-xs font-black sm:text-sm">
+                          {slot.product.name}
+                        </p>
+                        <p className="text-xs font-black text-orange-500">
+                          {formatPrice(slot.product.price)}
+                        </p>
+                      </div>
+                    </div>
+                  )
+              )}
+            </div>
+          )}
         </section>
 
         {/* CATEGORIAS */}
